@@ -107,13 +107,42 @@ workflows:
             "rootProject.name = \"OCRTool\"" \
             "include ':app'" > settings.gradle
 
-          # Write gradle.properties for AndroidX
+          # Write gradle.properties
           printf '%s\n' \
             "# Project-wide Gradle settings" \
             "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" \
             "android.useAndroidX=true" \
             "android.enableJetifier=true" \
             "kotlin.code.style=official" > gradle.properties
+
+          # Write correct AndroidManifest.xml
+          mkdir -p app/src/main
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.ocr">
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.AppCompat.Light">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+EOF
 
           echo "===== Files written, starting build ====="
           if [ -f "gradlew" ]; then
