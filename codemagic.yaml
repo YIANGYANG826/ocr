@@ -107,6 +107,14 @@ workflows:
             "rootProject.name = \"OCRTool\"" \
             "include ':app'" > settings.gradle
 
+          # Write gradle.properties for AndroidX
+          printf '%s\n' \
+            "# Project-wide Gradle settings" \
+            "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" \
+            "android.useAndroidX=true" \
+            "android.enableJetifier=true" \
+            "kotlin.code.style=official" > gradle.properties
+
           echo "===== Files written, starting build ====="
           if [ -f "gradlew" ]; then
             chmod +x gradlew
