@@ -5,14 +5,19 @@ workflows:
       - name: Unzip and build
         script: |
           set -e
-          echo "当前目录内容："
-          ls -la
-          unzip -o OCRTool.zip -d extracted
-          cd extracted/OCRTool
-          echo "项目根目录内容："
+          echo "===== Current directory contents ====="
           ls -la
 
-          # 修复项目级 build.gradle
+          echo "===== Extracting OCRTool.zip ====="
+          unzip -o OCRTool.zip -d extracted
+
+          cd extracted/OCRTool
+          echo "===== Project root contents ====="
+          ls -la
+
+          echo "===== Writing correct Gradle files ====="
+
+          # Write root build.gradle
           printf '%s\n' \
             "buildscript {" \
             "    repositories {" \
@@ -30,7 +35,8 @@ workflows:
             "    delete rootProject.buildDir" \
             "}" > build.gradle
 
-          # 修复 app/build.gradle
+          # Write app/build.gradle
+          mkdir -p app
           printf '%s\n' \
             "plugins {" \
             "    id 'com.android.application'" \
@@ -80,7 +86,7 @@ workflows:
             "    implementation 'com.google.code.gson:gson:2.10.1'" \
             "}" > app/build.gradle
 
-          # 修复 settings.gradle
+          # Write settings.gradle
           printf '%s\n' \
             "pluginManagement {" \
             "    repositories {" \
@@ -101,7 +107,7 @@ workflows:
             "rootProject.name = \"OCRTool\"" \
             "include ':app'" > settings.gradle
 
-          echo "文件修复完成，开始构建"
+          echo "===== Files written, starting build ====="
           if [ -f "gradlew" ]; then
             chmod +x gradlew
             ./gradlew assembleRelease --stacktrace
