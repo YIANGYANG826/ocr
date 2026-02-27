@@ -2,18 +2,18 @@ workflows:
   default:
     name: Default Workflow
     scripts:
-      - name: Find and run gradlew
+      - name: Find project root and build
         script: |
-          # 查找 gradlew 文件
-          GRADLEW_PATH=$(find . -name "gradlew" -type f | head -n 1)
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "错误：找不到 gradlew 文件"
+          # 查找 build.gradle 文件所在目录
+          BUILD_GRADLE=$(find . -name "build.gradle" -type f | head -n 1)
+          if [ -z "$BUILD_GRADLE" ]; then
+            echo "错误：找不到 build.gradle 文件"
             exit 1
           fi
-          echo "找到 gradlew 在: $GRADLEW_PATH"
-          cd $(dirname "$GRADLEW_PATH")
-          chmod +x gradlew
-          ./gradlew assembleRelease
+          PROJECT_DIR=$(dirname "$BUILD_GRADLE")
+          echo "项目目录: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          # 使用系统 gradle 构建
+          gradle assembleRelease
     artifacts:
-      - "app/build/outputs/**/**/*.apk"
-      - "*/app/build/outputs/**/**/*.apk"
+      - "**/app/build/outputs/**/**/*.apk"
