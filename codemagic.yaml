@@ -1,0 +1,10 @@
+workflows:
+  default:
+    name: Default Workflow
+    scripts:
+      - name: Build Android release APK
+        script: |
+          cd /CM_BUILD_DIR
+          ./gradlew assembleRelease
+    artifacts:
+      - app/build/outputs/**/**/*.apk
