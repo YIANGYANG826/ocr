@@ -7,20 +7,19 @@ workflows:
           set -e
           echo "当前目录内容："
           ls -la
-          
+
           # 解压 OCRTool.zip
           echo "正在解压 OCRTool.zip ..."
           unzip -o OCRTool.zip -d extracted
-          
+
           # 进入项目根目录
           cd extracted/OCRTool
-          
+
           echo "项目根目录内容："
           ls -la
-          
+
           # 修复项目级 build.gradle
           cat > build.gradle << 'EOF'
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     repositories {
         google()
@@ -43,7 +42,7 @@ tasks.register('clean', Delete) {
     delete rootProject.buildDir
 }
 EOF
-          
+
           # 修复 app/build.gradle
           cat > app/build.gradle << 'EOF'
 plugins {
@@ -94,7 +93,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
 }
 EOF
-          
+
           # 修复 settings.gradle
           cat > settings.gradle << 'EOF'
 pluginManagement {
@@ -114,10 +113,10 @@ dependencyResolutionManagement {
 rootProject.name = "OCRTool"
 include ':app'
 EOF
-          
+
           echo "文件修复完成，开始构建"
-          chmod +x gradlew 2>/dev/null || true
           if [ -f "gradlew" ]; then
+            chmod +x gradlew
             ./gradlew assembleRelease
           else
             gradle assembleRelease
