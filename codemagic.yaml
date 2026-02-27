@@ -2,18 +2,35 @@ workflows:
   default:
     name: Default Workflow
     scripts:
-      - name: Find project root and build
+      - name: Unzip and build
         script: |
-          # 查找 build.gradle 文件所在目录
-          BUILD_GRADLE=$(find . -name "build.gradle" -type f | head -n 1)
-          if [ -z "$BUILD_GRADLE" ]; then
-            echo "错误：找不到 build.gradle 文件"
-            exit 1
+          # 列出当前目录内容（调试用）
+          echo "当前目录内容："
+          ls -la
+          
+          # 解压 OCRTool.zip
+          echo "正在解压 OCRTool.zip ..."
+          unzip -o OCRTool.zip -d extracted
+          
+          # 查看解压后的内容
+          echo "解压后的 extracted 目录内容："
+          ls -la extracted
+          
+          # 进入解压后的目录（假设解压后得到 OCRTool 文件夹）
+          cd extracted/OCRTool
+          
+          # 查看项目根目录内容
+          echo "项目根目录内容："
+          ls -la
+          
+          # 尝试用 gradlew 构建，如果没有则用系统 gradle
+          if [ -f "gradlew" ]; then
+            echo "找到 gradlew，使用它构建"
+            chmod +x gradlew
+            ./gradlew assembleRelease
+          else
+            echo "未找到 gradlew，使用系统 gradle 构建"
+            gradle assembleRelease
           fi
-          PROJECT_DIR=$(dirname "$BUILD_GRADLE")
-          echo "项目目录: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
-          # 使用系统 gradle 构建
-          gradle assembleRelease
     artifacts:
-      - "**/app/build/outputs/**/**/*.apk"
+      - "extracted/**/app/build/outputs/**/**/*.apk"
