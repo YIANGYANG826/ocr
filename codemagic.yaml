@@ -18,7 +18,7 @@ workflows:
           echo "项目根目录内容："
           ls -la
 
-          # 修复项目级 build.gradle
+          # 修复项目级 build.gradle (仅保留 buildscript 和 clean)
           printf '%s\n' \
             "buildscript {" \
             "    repositories {" \
@@ -28,13 +28,6 @@ workflows:
             "    dependencies {" \
             "        classpath 'com.android.tools.build:gradle:8.2.0'" \
             "        classpath \"org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0\"" \
-            "    }" \
-            "}" \
-            "" \
-            "allprojects {" \
-            "    repositories {" \
-            "        google()" \
-            "        mavenCentral()" \
             "    }" \
             "}" \
             "" \
