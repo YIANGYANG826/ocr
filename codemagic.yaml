@@ -2,7 +2,17 @@ workflows:
   default:
     name: Default Workflow
     scripts:
-      - name: Build Android release APK
-        script: ./gradlew assembleRelease
+      - name: Find and run gradlew
+        script: |
+          # 查找 gradlew 文件
+          GRADLEW_PATH=$(find . -name "gradlew" -type f | head -n 1)
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "错误：找不到 gradlew 文件"
+            exit 1
+          fi
+          echo "找到 gradlew 在: $GRADLEW_PATH"
+          cd $(dirname "$GRADLEW_PATH")
+          chmod +x gradlew
+          ./gradlew assembleRelease
     artifacts:
-      - app/build/outputs/**/**/*.apk
+      - **/app/build/outputs/**/**/*.apk
