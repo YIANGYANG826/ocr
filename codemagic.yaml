@@ -2,7 +2,7 @@ workflows:
   default:
     name: Default Workflow
     scripts:
-      - name: Unzip and build
+      - name: Unzip and rebuild project
         script: |
           set -e
           echo "===== Current directory contents ====="
@@ -11,148 +11,211 @@ workflows:
           echo "===== Extracting OCRTool.zip ====="
           unzip -o OCRTool.zip -d extracted
 
-          cd extracted/OCRTool
-          echo "===== Project root contents ====="
-          ls -la
-
-          echo "===== Writing correct Gradle files ====="
-
-          # Write root build.gradle
-          printf '%s\n' \
-            "buildscript {" \
-            "    repositories {" \
-            "        google()" \
-            "        mavenCentral()" \
-            "        maven { url 'https://jitpack.io' }" \
-            "    }" \
-            "    dependencies {" \
-            "        classpath 'com.android.tools.build:gradle:8.2.0'" \
-            "        classpath \"org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0\"" \
-            "    }" \
-            "}" \
-            "" \
-            "tasks.register('clean', Delete) {" \
-            "    delete rootProject.buildDir" \
-            "}" > build.gradle
-
-          # Write app/build.gradle
-          mkdir -p app
-          printf '%s\n' \
-            "plugins {" \
-            "    id 'com.android.application'" \
-            "    id 'org.jetbrains.kotlin.android'" \
-            "}" \
-            "" \
-            "android {" \
-            "    namespace 'com.example.ocr'" \
-            "    compileSdk 34" \
-            "" \
-            "    defaultConfig {" \
-            "        applicationId \"com.example.ocr\"" \
-            "        minSdk 24" \
-            "        targetSdk 34" \
-            "        versionCode 1" \
-            "        versionName \"1.0\"" \
-            "    }" \
-            "" \
-            "    buildTypes {" \
-            "        release {" \
-            "            minifyEnabled false" \
-            "            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'" \
-            "        }" \
-            "    }" \
-            "    compileOptions {" \
-            "        sourceCompatibility JavaVersion.VERSION_1_8" \
-            "        targetCompatibility JavaVersion.VERSION_1_8" \
-            "    }" \
-            "    kotlinOptions {" \
-            "        jvmTarget = '1.8'" \
-            "    }" \
-            "    buildFeatures {" \
-            "        viewBinding true" \
-            "    }" \
-            "}" \
-            "" \
-            "dependencies {" \
-            "    implementation 'androidx.core:core-ktx:1.12.0'" \
-            "    implementation 'androidx.appcompat:appcompat:1.6.1'" \
-            "    implementation 'com.google.android.material:material:1.11.0'" \
-            "    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'" \
-            "    implementation 'androidx.recyclerview:recyclerview:1.3.2'" \
-            "    implementation 'com.google.mlkit:text-recognition-chinese:16.0.0'" \
-            "    implementation 'com.google.mlkit:text-recognition:16.0.0'" \
-            "    implementation 'com.github.dhaval2404:imagepicker:2.1'" \
-            "    implementation 'com.github.bumptech.glide:glide:4.16.0'" \
-            "    implementation 'com.google.code.gson:gson:2.10.1'" \
-            "}" > app/build.gradle
-
-          # Write settings.gradle
-          printf '%s\n' \
-            "pluginManagement {" \
-            "    repositories {" \
-            "        google()" \
-            "        mavenCentral()" \
-            "        gradlePluginPortal()" \
-            "        maven { url 'https://jitpack.io' }" \
-            "    }" \
-            "}" \
-            "dependencyResolutionManagement {" \
-            "    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)" \
-            "    repositories {" \
-            "        google()" \
-            "        mavenCentral()" \
-            "        maven { url 'https://jitpack.io' }" \
-            "    }" \
-            "}" \
-            "rootProject.name = \"OCRTool\"" \
-            "include ':app'" > settings.gradle
-
-          # Write gradle.properties
-          printf '%s\n' \
-            "# Project-wide Gradle settings" \
-            "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" \
-            "android.useAndroidX=true" \
-            "android.enableJetifier=true" \
-            "kotlin.code.style=official" > gradle.properties
-
-          # Create simple placeholder icon (1x1 transparent pixel) to avoid missing resource
+          # 创建全新的项目结构
+          mkdir -p app/src/main/java/com/example/ocr
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/mipmap-hdpi
+
+          echo "===== Copying Kotlin source files ====="
+          # 从解压后的目录复制所有 .kt 文件到正确位置
+          find extracted -name "*.kt" -exec cp {} app/src/main/java/com/example/ocr/ \;
+
+          echo "===== Generating fresh resource files ====="
+
+          # 生成 activity_main.xml（最简单的布局）
+          cat > app/src/main/res/layout/activity_main.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvResult"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="识别结果将显示在这里"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/btnSelect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="选择图片" />
+
+</LinearLayout>
+EOF
+
+          # 生成 item_image.xml（列表项布局）
+          cat > app/src/main/res/layout/item_image.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="80dp"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/ivThumb"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:scaleType="centerCrop" />
+
+    <TextView
+        android:id="@+id/tvIndex"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="16dp"
+        android:textSize="16sp" />
+</LinearLayout>
+EOF
+
+          # 生成 strings.xml（必需）
+          cat > app/src/main/res/values/strings.xml << 'EOF'
+<resources>
+    <string name="app_name">OCR工具</string>
+</resources>
+EOF
+
+          # 生成占位图标（透明1x1像素PNG）
           echo "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" | base64 -d > app/src/main/res/mipmap-hdpi/ic_launcher.png
 
-          # Write minimal AndroidManifest.xml
-          mkdir -p app/src/main
-          printf '%s\n' \
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>" \
-            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"" \
-            "    package=\"com.example.ocr\">" \
-            "" \
-            "    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />" \
-            "    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"" \
-            "        android:maxSdkVersion=\"28\" />" \
-            "    <uses-permission android:name=\"android.permission.CAMERA\" />" \
-            "" \
-            "    <application" \
-            "        android:allowBackup=\"true\"" \
-            "        android:label=\"OCR工具\"" \
-            "        android:icon=\"@mipmap/ic_launcher\">" \
-            "        <activity" \
-            "            android:name=\".MainActivity\"" \
-            "            android:exported=\"true\">" \
-            "            <intent-filter>" \
-            "                <action android:name=\"android.intent.action.MAIN\" />" \
-            "                <category android:name=\"android.intent.category.LAUNCHER\" />" \
-            "            </intent-filter>" \
-            "        </activity>" \
-            "    </application>" \
-            "</manifest>" > app/src/main/AndroidManifest.xml
+          # 生成 AndroidManifest.xml
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.ocr">
 
-          echo "===== Files written, starting build ====="
-          # Ensure gradlew exists or use system gradle
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew assembleRelease --stacktrace
-          else
-            gradle assembleRelease --stacktrace
-          fi
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.AppCompat.Light">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+EOF
+
+          echo "===== Generating Gradle files ====="
+
+          # 项目级 build.gradle
+          cat > build.gradle << 'EOF'
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0"
+    }
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.buildDir
+}
+EOF
+
+          # app/build.gradle
+          cat > app/build.gradle << 'EOF'
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.example.ocr'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.example.ocr"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'com.google.mlkit:text-recognition-chinese:16.0.0'
+    implementation 'com.google.mlkit:text-recognition:16.0.0'
+    implementation 'com.github.dhaval2404:imagepicker:2.1'
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+}
+EOF
+
+          # settings.gradle
+          cat > settings.gradle << 'EOF'
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url 'https://jitpack.io' }
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+rootProject.name = "OCRTool"
+include ':app'
+EOF
+
+          # gradle.properties
+          cat > gradle.properties << 'EOF'
+# Project-wide Gradle settings
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+android.enableJetifier=true
+kotlin.code.style=official
+EOF
+
+          echo "===== Project structure created, starting build ====="
+          ls -la
+          gradle assembleRelease --stacktrace
     artifacts:
-      - "extracted/**/app/build/outputs/**/**/*.apk"
+      - "app/build/outputs/**/**/*.apk"
