@@ -115,7 +115,11 @@ workflows:
             "android.enableJetifier=true" \
             "kotlin.code.style=official" > gradle.properties
 
-          # Write correct AndroidManifest.xml (without icon to avoid missing resource)
+          # Create simple placeholder icon (1x1 transparent pixel) to avoid missing resource
+          mkdir -p app/src/main/res/mipmap-hdpi
+          echo "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" | base64 -d > app/src/main/res/mipmap-hdpi/ic_launcher.png
+
+          # Write minimal AndroidManifest.xml
           mkdir -p app/src/main
           printf '%s\n' \
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>" \
@@ -130,7 +134,7 @@ workflows:
             "    <application" \
             "        android:allowBackup=\"true\"" \
             "        android:label=\"OCR工具\"" \
-            "        android:theme=\"@style/Theme.AppCompat.Light\">" \
+            "        android:icon=\"@mipmap/ic_launcher\">" \
             "        <activity" \
             "            android:name=\".MainActivity\"" \
             "            android:exported=\"true\">" \
@@ -143,6 +147,7 @@ workflows:
             "</manifest>" > app/src/main/AndroidManifest.xml
 
           echo "===== Files written, starting build ====="
+          # Ensure gradlew exists or use system gradle
           if [ -f "gradlew" ]; then
             chmod +x gradlew
             ./gradlew assembleRelease --stacktrace
